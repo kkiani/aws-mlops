@@ -14,7 +14,8 @@ class ModelDeploy(cdk.Construct):
         artifact_bucket = s3.Bucket(
             self,
             id=f"{id}-bucket",
-            bucket_name=f"{id.lower()}-bucket"
+            bucket_name=f"{id.lower()}",
+            removal_policy=cdk.RemovalPolicy.DESTROY
         )
 
 
