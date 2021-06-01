@@ -43,8 +43,8 @@ class ModelDeploy(cdk.Construct):
 
         training_job = stepfunction_tasks.SageMakerCreateTrainingJob(
             self,
-            id=f"{id}-training-job",
-            training_job_name=f"{id}TrainingJob",
+            id=f"training-job",
+            training_job_name=f"{id}TrainingJob".lower(),
             # role=execution_role,
             algorithm_specification=training_algorithm,
             resource_config=training_resource,
