@@ -49,7 +49,7 @@ class ModelDeploy(cdk.Construct):
             channel_name="training-data",
             data_source=stepfunction_tasks.DataSource(
                 s3_data_source=stepfunction_tasks.S3DataSource(
-                    s3_location=stepfunction_tasks.S3Location.from_bucket(artifact_bucket, key_prefix="output")
+                    s3_location=stepfunction_tasks.S3Location.from_bucket(artifact_bucket, key_prefix="input")
                 )
             )
         )
