@@ -74,6 +74,9 @@ class ModelDeploy(cdk.Construct):
             }
         )
 
+        training_job.grant_principal.add_to_principal_policy(training_policy)
+        
+
         state_machine = stepfunctions.StateMachine(
             self, 
             id="state-machine",
