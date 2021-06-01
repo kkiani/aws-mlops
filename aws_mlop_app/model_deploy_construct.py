@@ -7,7 +7,7 @@ from aws_cdk import aws_ec2 as ec2
 
 
 class ModelDeploy(cdk.Construct):
-    def __init__(self, scope: cdk.Construct, id: str, *, image_uri: str, execution_role: str, instance_type: str='ml.m5.large') -> None:
+    def __init__(self, scope: cdk.Construct, id: str, *, image_uri: str, execution_role: str, instance_type: str='m5.large') -> None:
         super().__init__(scope, id)
         
         # creating bucket to save model artifacts in it.
