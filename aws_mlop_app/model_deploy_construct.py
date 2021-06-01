@@ -1,9 +1,11 @@
 from attr import s
+from datetime import datetime
 from aws_cdk import core as cdk
 from aws_cdk import aws_stepfunctions as stepfunctions
 from aws_cdk import aws_stepfunctions_tasks as stepfunction_tasks
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_iam as iam
 
 
 class ModelDeploy(cdk.Construct):
@@ -21,14 +23,14 @@ class ModelDeploy(cdk.Construct):
 
         # policy
         # TODO: the policy must be removed when the whole architecture is desgined.
-        training_policy = iam.PolicyStatement(
+        ecr_access_policy = iam.PolicyStatement(
             effect=iam.Effect.ALLOW,
             actions=[
                 "ecr:*"
             ],
         )
 
-        training_policy.add_all_resources()
+        ecr_access_policy.add_all_resources()
 
 
         # creating training job process with sagemaker
@@ -55,32 +57,50 @@ class ModelDeploy(cdk.Construct):
             )
         )
 
+        # defining step function tasks
+        # training task
+        current_time = datetime.now().strftime("%I-%M-%B-%d-%Y")
         training_job = stepfunction_tasks.SageMakerCreateTrainingJob(
             self,
-            id=f"training-job",
-            training_job_name=f"{id}TrainingJob".lower(),
-            # role=execution_role,
+            id=f"Train the model",
+            training_job_name=f"{id}TrainingJob{current_time}".lower(),
             algorithm_specification=training_algorithm,
             resource_config=training_resource,
             output_data_config=training_outputconfig,
             input_data_config=[training_dataset_channel],
             hyperparameters={
-                'epochs': "100",
+                'epochs': "10",
                 'learning-rate': '0.01'
             },
             tags={
                 "owner": "kiarash",
                 "project": "cdk-test"
-            }
+            },
+            integration_pattern=stepfunctions.IntegrationPattern.RUN_JOB
         )
 
-        training_job.grant_principal.add_to_principal_policy(training_policy)
-        
+        training_job.grant_principal.add_to_principal_policy(ecr_access_policy)
 
+        # creating model task
+        create_model_job = stepfunction_tasks.SageMakerCreateModel(
+            self,
+            id="Create the model",
+            model_name="zachary-club",
+            primary_container=stepfunction_tasks.ContainerDefinition(
+                image=stepfunction_tasks.DockerImage.from_registry(image_uri),
+                model_s3_location=stepfunction_tasks.S3Location.from_bucket(artifact_bucket, key_prefix=f'output/{f"{id}TrainingJob{current_time}".lower()}/output/model.tar.gz'),
+            )
+        )
+
+        create_model_job.grant_principal.add_to_principal_policy(ecr_access_policy)
+
+        states = training_job.next(create_model_job)
         state_machine = stepfunctions.StateMachine(
             self, 
             id="state-machine",
-            definition=training_job
+            definition=states
         )
+
+
 
 
