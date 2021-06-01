@@ -17,6 +17,19 @@ class ModelDeploy(cdk.Construct):
             bucket_name=f"{id.lower()}-bucket"
         )
 
+
+        # policy
+        # TODO: the policy must be removed when the whole architecture is desgined.
+        training_policy = iam.PolicyStatement(
+            effect=iam.Effect.ALLOW,
+            actions=[
+                "ecr:*"
+            ],
+        )
+
+        training_policy.add_all_resources()
+
+
         # creating training job process with sagemaker
         training_algorithm = stepfunction_tasks.AlgorithmSpecification(
             training_image=stepfunction_tasks.DockerImage.from_registry(image_uri)
