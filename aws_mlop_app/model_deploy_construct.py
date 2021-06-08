@@ -1,4 +1,3 @@
-from attr import s
 from datetime import datetime
 from aws_cdk import core as cdk
 from aws_cdk import aws_stepfunctions as stepfunctions
@@ -59,11 +58,10 @@ class ModelDeploy(cdk.Construct):
 
         # defining step function tasks
         # training task
-        current_time = datetime.now().strftime("%I-%M-%B-%d-%Y")
         training_job = stepfunction_tasks.SageMakerCreateTrainingJob(
             self,
             id=f"Train the model",
-            training_job_name=f"{id}TrainingJob{current_time}".lower(),
+            training_job_name=stepfunctions.JsonPath.string_at("$.JobName"),
             algorithm_specification=training_algorithm,
             resource_config=training_resource,
             output_data_config=training_outputconfig,
@@ -88,7 +86,7 @@ class ModelDeploy(cdk.Construct):
             model_name="zachary-club",
             primary_container=stepfunction_tasks.ContainerDefinition(
                 image=stepfunction_tasks.DockerImage.from_registry(image_uri),
-                model_s3_location=stepfunction_tasks.S3Location.from_bucket(artifact_bucket, key_prefix=f'output/{f"{id}TrainingJob{current_time}".lower()}/output/model.tar.gz'),
+                model_s3_location=stepfunction_tasks.S3Location.from_json_expression("$.ModelArtifacts.S3ModelArtifacts")
             )
         )
 
