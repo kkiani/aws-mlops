@@ -94,7 +94,30 @@ class ModelDeploy(cdk.Construct):
 
         create_model_job.grant_principal.add_to_principal_policy(ecr_access_policy)
 
+        # createing endpoint configuration task
+        endpoint_config_job = stepfunction_tasks.SageMakerCreateEndpointConfig(
+            self,
+            id="Create an endpoint configuration",
+            endpoint_config_name="zachary-club",
+            production_variants=[stepfunction_tasks.ProductionVariant(
+                instance_type=ec2.InstanceType(instance_type),
+                initial_instance_count=1,
+                model_name="zachary-club",
+                variant_name="test"
+            )]
+        )
+
+        # creating endpoint task
+        endpoint_job = stepfunction_tasks.SageMakerCreateEndpoint(
+            self,
+            id="Create an endpoint for the model",
+            endpoint_config_name="zachary-club",
+            endpoint_name="zachary-club",
+        )
+
         states = training_job.next(create_model_job)
+        states = states.next(endpoint_config_job)
+        states = states.next(endpoint_job)
         state_machine = stepfunctions.StateMachine(
             self, 
             id="state-machine",
